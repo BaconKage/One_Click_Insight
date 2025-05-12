@@ -37,12 +37,13 @@ def parse_detailed_insights(text):
 
     for line in text.strip().split("\n"):
         line = line.strip()
-        if line.lower().startswith("title:") or line.lower().startswith("**insight"):
+
+        if line.lower().startswith("title:") or            line.lower().startswith("**") or            (line and line[0].isdigit() and "." in line[:3]):
             if current: insights.append(current)
-            if line.lower().startswith("title:"):
-                current = {"title": line.split(":", 1)[-1].strip()}
-            else:
-                current = {"title": line.replace("**", "").split(":", 1)[-1].strip()}
+            # Flexible title extraction
+            title = line.replace("**", "").split(":", 1)[-1].strip()
+            current = {"title": title}
+
         elif line.lower().startswith("explanation:"):
             current["explanation"] = line.split(":", 1)[-1].strip()
         elif line.lower().startswith("chart:"):
