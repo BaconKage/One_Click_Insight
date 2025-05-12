@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
@@ -50,7 +49,6 @@ def parse_detailed_insights(text):
         elif line.lower().startswith("tip:"):
             current["tip"] = line.split(":", 1)[-1].strip()
 
-    # Edge case: if Groq missed "Title:" line, recover it from first sentence
     if not insights and "insight" in text.lower():
         blocks = text.strip().split("\n\n")
         for block in blocks:
@@ -66,7 +64,6 @@ def parse_detailed_insights(text):
 
     if current and current.get("title"): insights.append(current)
     return insights
-
 
 def plot_chart(df, insight):
     try:
@@ -142,10 +139,11 @@ Tip: ...
 """
 
         ai_response = query_groq(prompt)
+        print("🧠 Raw AI response:", ai_response)
         insights = parse_detailed_insights(ai_response)
 
         if not insights:
-            return jsonify({"error": "No insights extracted"}), 500
+            return jsonify({"error": "No insights extracted", "raw": ai_response}), 500
 
         chart, error = plot_chart(df, insights[0])
         return jsonify({
@@ -158,4 +156,3 @@ Tip: ...
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
