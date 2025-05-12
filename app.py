@@ -36,9 +36,13 @@ def parse_detailed_insights(text):
     current = {}
 
     for line in text.strip().split("\n"):
-        if line.lower().startswith("title:"):
+        line = line.strip()
+        if line.lower().startswith("title:") or line.lower().startswith("**insight"):
             if current: insights.append(current)
-            current = {"title": line.split(":", 1)[-1].strip()}
+            if line.lower().startswith("title:"):
+                current = {"title": line.split(":", 1)[-1].strip()}
+            else:
+                current = {"title": line.replace("**", "").split(":", 1)[-1].strip()}
         elif line.lower().startswith("explanation:"):
             current["explanation"] = line.split(":", 1)[-1].strip()
         elif line.lower().startswith("chart:"):
@@ -49,20 +53,8 @@ def parse_detailed_insights(text):
         elif line.lower().startswith("tip:"):
             current["tip"] = line.split(":", 1)[-1].strip()
 
-    if not insights and "insight" in text.lower():
-        blocks = text.strip().split("\n\n")
-        for block in blocks:
-            parts = block.strip().split("\n")
-            if len(parts) >= 3:
-                insights.append({
-                    "title": parts[0].strip(),
-                    "explanation": parts[1].strip(),
-                    "chart": "bar chart",
-                    "columns": [],
-                    "tip": parts[2].strip()
-                })
-
-    if current and current.get("title"): insights.append(current)
+    if current and current.get("title"):
+        insights.append(current)
     return insights
 
 def plot_chart(df, insight):
