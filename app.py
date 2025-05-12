@@ -35,7 +35,8 @@ def query_groq(prompt):
 def parse_detailed_insights(text):
     insights = []
     current = {}
-    for line in text.split("\n"):
+
+    for line in text.strip().split("\n"):
         if line.lower().startswith("title:"):
             if current: insights.append(current)
             current = {"title": line.split(":", 1)[-1].strip()}
@@ -44,11 +45,28 @@ def parse_detailed_insights(text):
         elif line.lower().startswith("chart:"):
             current["chart"] = line.split(":", 1)[-1].strip()
         elif line.lower().startswith("columns:"):
-            current["columns"] = [c.strip() for c in line.split(":", 1)[-1].split(",")]
+            cols = line.split(":", 1)[-1].strip().split(",")
+            current["columns"] = [c.strip() for c in cols if c.strip()]
         elif line.lower().startswith("tip:"):
             current["tip"] = line.split(":", 1)[-1].strip()
-    if current: insights.append(current)
+
+    # Edge case: if Groq missed "Title:" line, recover it from first sentence
+    if not insights and "insight" in text.lower():
+        blocks = text.strip().split("\n\n")
+        for block in blocks:
+            parts = block.strip().split("\n")
+            if len(parts) >= 3:
+                insights.append({
+                    "title": parts[0].strip(),
+                    "explanation": parts[1].strip(),
+                    "chart": "bar chart",
+                    "columns": [],
+                    "tip": parts[2].strip()
+                })
+
+    if current and current.get("title"): insights.append(current)
     return insights
+
 
 def plot_chart(df, insight):
     try:
