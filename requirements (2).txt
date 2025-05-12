@@ -1,0 +1,8 @@
+
+Flask
+flask-cors
+pandas
+requests
+plotly
+openpyxl
+kaleido
