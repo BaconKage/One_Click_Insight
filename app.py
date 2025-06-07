@@ -17,7 +17,8 @@ HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-
 def query_llama3(prompt):
     headers = {
         "Authorization": f"Bearer {HF_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
 
     payload = {
