@@ -10,26 +10,27 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama3-70b-8192"
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
+TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
+MODEL_NAME = "meta-llama/Meta-Llama-3-70B-Instruct"
 
-def query_groq(prompt):
+def query_llama3(prompt):
     headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Authorization": f"Bearer {TOGETHER_API_KEY}",
         "Content-Type": "application/json"
     }
     payload = {
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.5
+        "temperature": 0.5,
+        "max_tokens": 1024
     }
     try:
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+        response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
-        return str(e)
+        return f"❌ LLaMA API Error: {str(e)}"
 
 def parse_detailed_insights(text):
     insights = []
@@ -38,9 +39,10 @@ def parse_detailed_insights(text):
     for line in text.strip().split("\n"):
         line = line.strip()
 
-        if line.lower().startswith("title:") or            line.lower().startswith("**") or            (line and line[0].isdigit() and "." in line[:3]):
+        if line.lower().startswith("title:") or \
+           line.lower().startswith("**") or \
+           (line and line[0].isdigit() and "." in line[:3]):
             if current: insights.append(current)
-            # Flexible title extraction
             title = line.replace("**", "").split(":", 1)[-1].strip()
             current = {"title": title}
 
@@ -131,7 +133,7 @@ Columns: ...
 Tip: ...
 """
 
-        ai_response = query_groq(prompt)
+        ai_response = query_llama3(prompt)
         print("🧠 Raw AI response:", ai_response)
         insights = parse_detailed_insights(ai_response)
 
