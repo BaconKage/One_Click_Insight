@@ -11,35 +11,28 @@ import traceback
 app = Flask(__name__)
 CORS(app)
 
-HF_API_KEY = os.getenv("HF_API_KEY")
-HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-70B-Instruct"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL_NAME = "llama3-70b-8192"
 
 def query_llama3(prompt):
     headers = {
-        "Authorization": f"Bearer {HF_API_KEY}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
     }
-
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "temperature": 0.5,
-            "max_new_tokens": 1024
-        }
+        "model": MODEL_NAME,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.5,
+        "max_tokens": 1024
     }
 
     try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        result = response.json()
-
-        if isinstance(result, list) and "generated_text" in result[0]:
-            return result[0]["generated_text"]
-        else:
-            return f"⚠️ Unexpected Hugging Face response: {result}"
+        return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
-        return f"❌ Hugging Face API Error: {str(e)}"
+        return f"❌ Groq API Error: {str(e)}"
 
 def parse_detailed_insights(text):
     insights = []
