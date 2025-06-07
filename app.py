@@ -6,31 +6,39 @@ import plotly.express as px
 import io
 import base64
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app)
 
-TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
-TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
-MODEL_NAME = "meta-llama/Meta-Llama-3-70B-Instruct"
+HF_API_KEY = os.getenv("HF_API_KEY")
+HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-70B-Instruct"
 
 def query_llama3(prompt):
     headers = {
-        "Authorization": f"Bearer {TOGETHER_API_KEY}",
+        "Authorization": f"Bearer {HF_API_KEY}",
         "Content-Type": "application/json"
     }
+
     payload = {
-        "model": MODEL_NAME,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.5,
-        "max_tokens": 1024
+        "inputs": prompt,
+        "parameters": {
+            "temperature": 0.5,
+            "max_new_tokens": 1024
+        }
     }
+
     try:
-        response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
+        response = requests.post(HF_API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        result = response.json()
+
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return result[0]["generated_text"]
+        else:
+            return f"⚠️ Unexpected Hugging Face response: {result}"
     except Exception as e:
-        return f"❌ LLaMA API Error: {str(e)}"
+        return f"❌ Hugging Face API Error: {str(e)}"
 
 def parse_detailed_insights(text):
     insights = []
@@ -147,6 +155,7 @@ Tip: ...
             "error": error
         })
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
